@@ -70,7 +70,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	normal_distribution<double> nd_theta(0, std_pos[2]);
 
 	// iterate through the elements of the public particles vector
-	for(int i=0; i<particles.sizeof(); i++){
+	for(int i=0; i<particles.size(); i++){
 
 		// to speed things up since this is used many times below
 		double theta = particles[i].theta;
