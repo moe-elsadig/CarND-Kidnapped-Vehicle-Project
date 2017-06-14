@@ -76,6 +76,9 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		double theta = particles[i].theta;
 		double theta_p_theta_dot_dt = yaw_rate*delta_t + theta;
 
+		if(abs(yaw_rate) < 0.00001){
+			cout << "Help needed! send superman!" << endl;
+		}
 		// add measurements
 		particles[i].x += (velocity/yaw_rate) / (sin(theta_p_theta_dot_dt)-sin(theta));
 		particles[i].y += (velocity/yaw_rate) / (cos(theta)-cos(theta_p_theta_dot_dt));
@@ -129,6 +132,77 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+
+	for(int i=0; i<num_particles; i++){
+
+		// current particle parameters
+		double p_x = particles[i].x;
+		double p_y = particles[i].y;
+		double p_theta = particles[i].theta;
+
+		// prediction storage
+		vector<LandmarkObs> prediction_list;
+
+		// iterate and check for predictions
+		for(int j=0; j<map_landmarks.landmark_list.size(); j++){
+
+			// landmark parameters
+			int lmark_id = map_landmarks.landmark_list[j].id_i;
+			double lmark_x = map_landmarks.landmark_list[j].x_f;
+			double lmark_y = map_landmarks.landmark_list[j].y_f;
+
+			if(dist(p_x, lmark_x, p_y, lmark_y) <= sensor_range){
+
+				prediction_list.push_back(LandmarkObs{lmark_id, lmark_x, lmark_y});
+			}
+		}
+
+		// transform the observations to the map coordinate system
+		vector<LandmarkObs> observations_map;
+		for(int j=0; j<observations.size(); j++){
+
+      double map_x = p_x+cos(p_theta)*observations[j].x-sin(p_theta)*observations[j].y;
+      double map_y = p_y+sin(p_theta)*observations[j].x+cos(p_theta)*observations[j].y;
+      observations_map.push_back(LandmarkObs{observations[j].id, map_x, map_y});
+		}
+
+		// go for the data association
+		dataAssociation(prediction_list, observations_map);
+
+		// get the new weights
+		// re initializing weights back to 1.
+		particles[i].weight = 1.;
+
+		// placeholders for the upcoming loop
+		int da_id;
+		double obs_x, obs_y, pred_x, pred_y;
+
+		// iterate through the observations_map
+		for(int j=0; j<observations_map.size(); j++){
+
+			da_id = observations_map[j].id;
+			obs_x = observations_map[j].x;
+			obs_y = observations_map[j].y;
+
+			for(int k=0; k<prediction_list.size(); k++){
+
+				if(prediction_list[k].id == da_id){
+
+					obs_x = prediction_list[k].x;
+					obs_y = prediction_list[k].y;
+				}
+			}
+
+			// new weight, using multivariate Gaussian
+      double s_x = std_landmark[0];
+      double s_y = std_landmark[1];
+      double obs_w = (1/(2*M_PI*s_x*s_y)) * exp(-(pow(pred_x-obs_x, 2)/(2*pow(s_x, 2))
+																								+(pow(pred_y-obs_y, 2)/(2*pow(s_y, 2)))));
+
+			// save the weight update as the product of the new weight and the observations' weights
+      particles[i].weight *= obs_w;
+		}
+	}
 }
 
 void ParticleFilter::resample() {
@@ -136,6 +210,40 @@ void ParticleFilter::resample() {
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
 
+	// var to get all of the weights and to store the new particles
+  vector<double> curr_w;
+	vector<Particle> new_particles;
+
+  for(int i=0; i<num_particles; i++){
+
+    curr_w.push_back(particles[i].weight);
+  }
+
+  // generate a random int for the resampling init
+  uniform_int_distribution<int> uni_d(0, num_particles-1);
+  auto index_ = uni_d(gen);
+
+  // get the largest current weight value and the max confusion
+  double max_w = *max_element(curr_w.begin(), curr_w.end());
+  uniform_real_distribution<double> uni_d_r(0., max_w);
+
+  for(int i=0; i<num_particles; i++){
+
+    double init_val = 0.+uni_d_r(gen)*2.;
+
+		// keep iterating over the particles till the init_val is more than the current weight for said particle
+    while (init_val > curr_w[index_]){
+
+      init_val -= curr_w[index_];
+      index_ = ((index_+1)%num_particles);
+    }
+
+		// add the new partivle to the list
+    new_particles.push_back(particles[index_]);
+  }
+
+	// replace the old with the new
+  particles = new_particles;
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
