@@ -19,6 +19,9 @@
 
 using namespace std;
 
+// generator for random numbers
+default_random_engine gen;
+
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1.
@@ -27,9 +30,6 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 
 	// set the number of particles to useful
 	num_particles = 10;
-
-	// generator for random numbers
-	default_random_engine gen;
 
 	// define the normal distributions for the given uncertainties std[std_x, std_y, std_theta]
 	// sample from these normal distrubtions like this:
@@ -42,12 +42,18 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	for(int i=0; i<num_particles; i++){
 
 		Particle particle;
+		// fill out the particle variable with the init values and their respective noise
 		particle.id = i;
 		particle.x = x + nd_x(gen);
 		particle.y = y + nd_y(gen);
 		particle.theta = theta + nd_theta(gen);
 		particle.weight = 1.;
+
+		// add this new particle to the public particles vector
+		particles.push_back(particle);
 	}
+
+	is_initialized = true;
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -56,13 +62,30 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
+	// define the normal distributions for the given measurement uncertainties std_pos[std_x, std_y, std_theta]
+	// sample from these normal distrubtions like this:
+	// sample_x = dist_x(gen);
+	normal_distribution<double> nd_x(0, std_pos[0]);
+	normal_distribution<double> nd_y(0, std_pos[1]);
+	normal_distribution<double> nd_theta(0, std_pos[2]);
 
+	// iterate through the elements of the public particles vector
+	for(int i=0; i<particles.sizeof(); i++){
 
+		// to speed things up since this is used many times below
+		double theta = particles[i].theta;
+		double theta_p_theta_dot_dt = yaw_rate*delta_t + theta;
 
+		// add measurements
+		particles[i].x += (velocity/yaw_rate) / (sin(theta_p_theta_dot_dt)-sin(theta));
+		particles[i].y += (velocity/yaw_rate) / (cos(theta)-cos(theta_p_theta_dot_dt));
+		particles[i].theta = theta_p_theta_dot_dt;
 
-
-
-
+		// add noise
+		particles[i].x += nd_x(gen);
+		particles[i].y += nd_y(gen);
+		particles[i].theta += nd_theta(gen);
+	}
 }
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
