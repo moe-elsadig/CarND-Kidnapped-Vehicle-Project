@@ -61,7 +61,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
-	
+
 	// define the normal distributions for the given measurement uncertainties std_pos[std_x, std_y, std_theta]
 	// sample from these normal distrubtions like this:
 	// sample_x = dist_x(gen);
@@ -77,12 +77,18 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		double theta_p_theta_dot_dt = yaw_rate*delta_t + theta;
 
 		if(abs(yaw_rate) < 0.00001){
-			cout << "Help needed! send superman!" << endl;
+
+			// add measurements
+			particles[i].x += velocity(delta_t)(cos(theta))
+			particles[i].y += velocity(delta_t)(sin(theta))
+			particles[i].x += velocity(delta_t)(cos(theta))
+		} else {
+
+			// add measurements
+			particles[i].x += (velocity/yaw_rate) / (sin(theta_p_theta_dot_dt)-sin(theta));
+			particles[i].y += (velocity/yaw_rate) / (cos(theta)-cos(theta_p_theta_dot_dt));
 		}
-		// add measurements
-		particles[i].x += (velocity/yaw_rate) / (sin(theta_p_theta_dot_dt)-sin(theta));
-		particles[i].y += (velocity/yaw_rate) / (cos(theta)-cos(theta_p_theta_dot_dt));
-		particles[i].theta = theta_p_theta_dot_dt;
+
 
 		// add noise
 		particles[i].x += nd_x(gen);
