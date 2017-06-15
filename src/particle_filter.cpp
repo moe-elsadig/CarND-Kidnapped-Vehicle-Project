@@ -79,8 +79,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		if(abs(yaw_rate) < 0.00001){
 
 			// add measurements
-			particles[i].x += velocity(delta_t)(cos(theta))
-			particles[i].y += velocity(delta_t)(sin(theta))
+			particles[i].x += velocity*delta_t*cos(theta);
+			particles[i].y += velocity*delta_t*sin(theta);
 		} else {
 
 			// add measurements
@@ -103,11 +103,11 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
 
-	double closest_dst = numeric_limits<double>::max();
 	int new_id = 0;
 
 	for(int i=0; i<observations.size(); i++){
 
+		double closest_dst = numeric_limits<double>::max();
 		LandmarkObs curr_obs = observations[i];
 
 		for(int j=0; j<predicted.size(); j++){
