@@ -81,12 +81,12 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 			// add measurements
 			particles[i].x += velocity(delta_t)(cos(theta))
 			particles[i].y += velocity(delta_t)(sin(theta))
-			particles[i].x += velocity(delta_t)(cos(theta))
 		} else {
 
 			// add measurements
-			particles[i].x += (velocity/yaw_rate) / (sin(theta_p_theta_dot_dt)-sin(theta));
-			particles[i].y += (velocity/yaw_rate) / (cos(theta)-cos(theta_p_theta_dot_dt));
+			particles[i].x += (velocity/yaw_rate)*(sin(theta_p_theta_dot_dt)-sin(theta));
+			particles[i].y += (velocity/yaw_rate)*(cos(theta)-cos(theta_p_theta_dot_dt));
+			particles[i].theta = theta_p_theta_dot_dt;
 		}
 
 
