@@ -115,7 +115,7 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 			LandmarkObs iter_pred = predicted[j];
 
 			// use the <iterator> function dist() to get the distance between two grphical points
-			double iter_dst = dist(curr_obs.x,iter_pred.x,curr_obs.y,iter_pred.y);
+			double iter_dst = dist(curr_obs.x,curr_obs.y,iter_pred.x,iter_pred.y);
 
 			if(iter_dst<closest_dst){
 
