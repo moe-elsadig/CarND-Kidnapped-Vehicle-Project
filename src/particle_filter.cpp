@@ -29,7 +29,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
 	// set the number of particles to useful
-	num_particles = 99;
+	num_particles = 200;
 
 	// define the normal distributions for the given uncertainties std[std_x, std_y, std_theta]
 	// sample from these normal distrubtions like this:
@@ -103,10 +103,9 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
 
-	int new_id = 0;
-
 	for(int i=0; i<observations.size(); i++){
 
+		int new_id = -1;
 		double closest_dst = numeric_limits<double>::max();
 		LandmarkObs curr_obs = observations[i];
 
@@ -120,10 +119,12 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 			if(iter_dst<closest_dst){
 
 				closest_dst = iter_dst;
-				new_id = j;
+				new_id = predicted[j].id;
 			}
 		}
 		observations[i].id = new_id;
+		// observations[i].x = predicted[new_id].x;
+		// observations[i].y = predicted[new_id].y;
 	}
 }
 
@@ -195,8 +196,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 				if(prediction_list[k].id == da_id){
 
-					obs_x = prediction_list[k].x;
-					obs_y = prediction_list[k].y;
+					pred_x = prediction_list[k].x;
+					pred_y = prediction_list[k].y;
 				}
 			}
 
