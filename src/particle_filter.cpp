@@ -29,7 +29,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	// NOTE: Consult particle_filter.h for more information about this method (and others in this file).
 
 	// set the number of particles to useful
-	num_particles = 10;
+	num_particles = 99;
 
 	// define the normal distributions for the given uncertainties std[std_x, std_y, std_theta]
 	// sample from these normal distrubtions like this:
@@ -61,7 +61,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
-
+	
 	// define the normal distributions for the given measurement uncertainties std_pos[std_x, std_y, std_theta]
 	// sample from these normal distrubtions like this:
 	// sample_x = dist_x(gen);
@@ -97,21 +97,22 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to
 	//   implement this method and use it as a helper during the updateWeights phase.
 
-	LandmarkObs init_pred = predicted[0];
+	double closest_dst = numeric_limits<double>::max();
 	int new_id = 0;
 
 	for(int i=0; i<observations.size(); i++){
 
 		LandmarkObs curr_obs = observations[i];
-		// use the <iterator> function dist() to get the distance between two grphical points
-		double closest_dst = dist(curr_obs.x,init_pred.x,curr_obs.y,init_pred.y);
 
-		for(int j=1; j<predicted.size(); j++){
+		for(int j=0; j<predicted.size(); j++){
 
 			LandmarkObs iter_pred = predicted[j];
+
+			// use the <iterator> function dist() to get the distance between two grphical points
 			double iter_dst = dist(curr_obs.x,iter_pred.x,curr_obs.y,iter_pred.y);
 
 			if(iter_dst<closest_dst){
+
 				closest_dst = iter_dst;
 				new_id = j;
 			}
